@@ -8,7 +8,6 @@ import os
 import yaml
 from typing import Dict, List, Optional, Union, Any
 from pydantic import BaseSettings, validator
-from pydantic_settings import BaseSettings
 
 # Get the base directory of the project
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))

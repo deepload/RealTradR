@@ -60,6 +60,245 @@ def load_strategy_config():
         return default_config
 
 
+class MovingAverageCrossover:
+    """Moving Average Crossover Strategy for single symbol real-time trading"""
+    
+    def __init__(self, symbol, short_window=10, long_window=30, alpaca_api=None):
+        """
+        Initialize the strategy for a single symbol
+        
+        Args:
+            symbol: Stock symbol to trade
+            short_window: Short moving average window length
+            long_window: Long moving average window length
+            alpaca_api: Alpaca API instance (optional)
+        """
+        self.symbol = symbol
+        self.short_window = short_window
+        self.long_window = long_window
+        
+        # Initialize Alpaca API if not provided
+        if alpaca_api is None:
+            self.api = tradeapi.REST(
+                ALPACA_API_KEY,
+                ALPACA_API_SECRET,
+                ALPACA_API_BASE_URL,
+                api_version="v2"
+            )
+        else:
+            self.api = alpaca_api
+            
+        # Track last signal to avoid duplicate trades
+        self.last_signal = None
+        self.last_position = 0
+        
+        logger.info(f"Initialized {self.__class__.__name__} for {symbol} with parameters: "
+                   f"Short MA={short_window}, Long MA={long_window}")
+    
+    def get_historical_data(self, days=40):
+        """
+        Get historical data for the symbol
+        
+        Args:
+            days: Number of days of history to retrieve
+            
+        Returns:
+            DataFrame with historical data
+        """
+        try:
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days)
+            
+            logger.info(f"Getting historical data for {self.symbol} from {start_date} to {end_date}")
+            
+            # Get historical data from Alpaca
+            bars = self.api.get_bars(
+                self.symbol,
+                TimeFrame.Day,
+                start=start_date.strftime("%Y-%m-%d"),
+                end=end_date.strftime("%Y-%m-%d"),
+            ).df
+            
+            # Reset index to make timestamp a column
+            bars = bars.reset_index()
+            
+            logger.info(f"Got {len(bars)} bars for {self.symbol}")
+            
+            return bars
+        except Exception as e:
+            logger.error(f"Error getting historical data for {self.symbol}: {e}")
+            return pd.DataFrame()
+    
+    def calculate_signals(self, df):
+        """
+        Calculate trading signals based on moving average crossover
+        
+        Args:
+            df: DataFrame with historical data
+            
+        Returns:
+            DataFrame with signals
+        """
+        try:
+            # Create a copy of the dataframe
+            df = df.copy()
+            
+            # Calculate moving averages
+            df["short_ma"] = df["close"].rolling(window=self.short_window, min_periods=1).mean()
+            df["long_ma"] = df["close"].rolling(window=self.long_window, min_periods=1).mean()
+            
+            # Calculate signals
+            df["signal"] = 0.0
+            signal_mask = df.index >= df.index[min(self.short_window, len(df)-1)]
+            df.loc[signal_mask, "signal"] = np.where(
+                df.loc[signal_mask, "short_ma"] > df.loc[signal_mask, "long_ma"],
+                1.0,
+                0.0
+            )
+            
+            # Calculate position changes
+            df["position"] = df["signal"].diff()
+            
+            return df
+        except Exception as e:
+            logger.error(f"Error calculating signals for {self.symbol}: {e}")
+            return pd.DataFrame()
+    
+    def get_current_price(self):
+        """Get the current price of the symbol"""
+        try:
+            trade = self.api.get_latest_trade(self.symbol)
+            return float(trade.price)
+        except Exception as e:
+            logger.error(f"Error getting current price for {self.symbol}: {e}")
+            return None
+    
+    def check_signals(self):
+        """
+        Check for trading signals based on current market data
+        
+        Returns:
+            Signal string: 'buy', 'sell', or None
+        """
+        try:
+            # Get historical data
+            data = self.get_historical_data(days=max(40, self.long_window * 2))
+            
+            if data.empty:
+                logger.error(f"No historical data available for {self.symbol}")
+                return None
+            
+            # Calculate signals
+            signals = self.calculate_signals(data)
+            
+            if signals.empty:
+                logger.error(f"Error calculating signals for {self.symbol}")
+                return None
+            
+            # Get the latest signal
+            latest_signal = signals.iloc[-1]
+            position_change = latest_signal["position"]
+            
+            # Check for position change
+            if position_change > 0:
+                # Buy signal
+                if self.last_position == 1:
+                    # Already have a buy signal, no need to buy again
+                    logger.info(f"Already have buy signal for {self.symbol}")
+                    return None
+                
+                logger.info(f"Buy signal for {self.symbol} at {latest_signal['close']}")
+                self.last_position = 1
+                self.last_signal = "buy"
+                return "buy"
+                
+            elif position_change < 0:
+                # Sell signal
+                if self.last_position == 0:
+                    # Already have a sell signal, no need to sell again
+                    logger.info(f"Already have sell signal for {self.symbol}")
+                    return None
+                
+                logger.info(f"Sell signal for {self.symbol} at {latest_signal['close']}")
+                self.last_position = 0
+                self.last_signal = "sell"
+                return "sell"
+            
+            # No position change
+            return None
+        
+        except Exception as e:
+            logger.error(f"Error checking signals for {self.symbol}: {e}")
+            return None
+    
+    def get_performance_metrics(self, days=90):
+        """
+        Calculate performance metrics for this strategy
+        
+        Args:
+            days: Number of days to lookback
+            
+        Returns:
+            Dictionary of performance metrics
+        """
+        try:
+            # Get historical data
+            data = self.get_historical_data(days=days)
+            
+            if data.empty:
+                logger.error(f"No historical data available for {self.symbol}")
+                return {}
+            
+            # Calculate signals
+            signals = self.calculate_signals(data)
+            
+            if signals.empty:
+                logger.error(f"Error calculating signals for {self.symbol}")
+                return {}
+            
+            # Calculate returns
+            signals["returns"] = signals["close"].pct_change()
+            
+            # Calculate strategy returns
+            signals["strategy_returns"] = signals["signal"].shift(1) * signals["returns"]
+            
+            # Calculate cumulative returns
+            signals["cumulative_returns"] = (1 + signals["returns"]).cumprod() - 1
+            signals["cumulative_strategy_returns"] = (1 + signals["strategy_returns"]).cumprod() - 1
+            
+            # Calculate metrics
+            total_return = signals["cumulative_strategy_returns"].iloc[-1]
+            buy_hold_return = signals["cumulative_returns"].iloc[-1]
+            
+            # Calculate Sharpe ratio (assuming 0% risk-free rate)
+            sharpe_ratio = signals["strategy_returns"].mean() / signals["strategy_returns"].std() * np.sqrt(252)
+            
+            # Calculate maximum drawdown
+            cumulative = (1 + signals["strategy_returns"]).cumprod()
+            max_value = cumulative.cummax()
+            drawdown = (cumulative / max_value) - 1
+            max_drawdown = drawdown.min()
+            
+            # Calculate win rate
+            winning_days = signals[signals["strategy_returns"] > 0]
+            win_rate = len(winning_days) / len(signals[signals["strategy_returns"] != 0]) if len(signals[signals["strategy_returns"] != 0]) > 0 else 0
+            
+            return {
+                "symbol": self.symbol,
+                "total_return": total_return * 100,
+                "buy_hold_return": buy_hold_return * 100,
+                "outperformance": (total_return - buy_hold_return) * 100,
+                "sharpe_ratio": sharpe_ratio,
+                "max_drawdown": max_drawdown * 100,
+                "win_rate": win_rate * 100,
+                "trades": len(signals[signals["position"] != 0])
+            }
+        
+        except Exception as e:
+            logger.error(f"Error calculating performance metrics for {self.symbol}: {e}")
+            return {}
+
+
 class SimpleMAStrategy:
     """Simple Moving Average Crossover Strategy"""
     
