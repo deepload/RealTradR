@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Alpaca API credentials
-ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
-ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET")
+ALPACA_API_KEY = os.getenv("ALPACA_API_KEY", "PKFK3EAPXA9D9CXZ33JD")
+ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET","nqGS1mnSKFYfkE6pLvZhYNZizurzAMCGcWEDnLR3")
 ALPACA_API_BASE_URL = os.getenv("ALPACA_API_BASE_URL", "https://paper-api.alpaca.markets")
 ALPACA_PAPER_TRADING = os.getenv("ALPACA_PAPER_TRADING", "true").lower() == "true"
 
