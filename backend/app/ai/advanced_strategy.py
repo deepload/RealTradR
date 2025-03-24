@@ -609,6 +609,101 @@ class AdvancedAIStrategy:
                 "target_position": target_position_size
             }
     
+    def get_performance_metrics(self):
+        """
+        Get performance metrics for the strategy
+        
+        Returns:
+            Dictionary with performance metrics
+        """
+        try:
+            # Get account information
+            account = self.api.get_account()
+            
+            # Get portfolio history
+            portfolio_hist = self.api.get_portfolio_history(period="1M", timeframe="1D")
+            
+            # Calculate daily returns
+            equity = portfolio_hist.equity
+            
+            # Handle empty equity array or all zeros
+            if not equity or all(e == 0 for e in equity):
+                return {
+                    "total_return": 0.0,
+                    "annualized_return": 0.0,
+                    "sharpe_ratio": 0.0,
+                    "max_drawdown": 0.0,
+                    "equity": float(account.equity) if hasattr(account, 'equity') else 0.0,
+                    "buying_power": float(account.buying_power) if hasattr(account, 'buying_power') else 0.0,
+                    "daily_returns": [0.0],
+                    "note": "No trading activity detected"
+                }
+            
+            daily_returns = [0]
+            
+            for i in range(1, len(equity)):
+                if equity[i-1] > 0:
+                    daily_return = (equity[i] - equity[i-1]) / equity[i-1]
+                    daily_returns.append(daily_return)
+                else:
+                    daily_returns.append(0)
+            
+            # Calculate metrics
+            last_equity = float(account.last_equity) if hasattr(account, 'last_equity') and float(account.last_equity) > 0 else float(account.equity)
+            current_equity = float(account.equity)
+            
+            # Avoid division by zero
+            if last_equity > 0:
+                total_return = (current_equity - last_equity) / last_equity * 100
+            else:
+                total_return = 0
+            
+            # Annualized return
+            trading_days = len(equity)
+            if trading_days > 1 and total_return != 0:
+                annualized_return = ((1 + total_return/100) ** (252/trading_days) - 1) * 100
+            else:
+                annualized_return = 0
+            
+            # Sharpe ratio
+            risk_free_rate = self.config.get("risk_free_rate", 0.02) / 252  # Daily risk-free rate
+            excess_returns = [r - risk_free_rate for r in daily_returns]
+            sharpe_ratio = 0
+            
+            if len(excess_returns) > 1 and np.std(excess_returns) > 0:
+                sharpe_ratio = np.mean(excess_returns) / np.std(excess_returns) * np.sqrt(252)
+            
+            # Maximum drawdown
+            max_drawdown = 0
+            
+            if len(equity) > 0:
+                peak = equity[0]
+                
+                for value in equity:
+                    if value > peak:
+                        peak = value
+                    
+                    # Avoid division by zero
+                    if peak > 0:
+                        drawdown = (peak - value) / peak
+                        max_drawdown = max(max_drawdown, drawdown)
+            
+            max_drawdown *= 100  # Convert to percentage
+            
+            return {
+                "total_return": total_return,
+                "annualized_return": annualized_return,
+                "sharpe_ratio": sharpe_ratio,
+                "max_drawdown": max_drawdown,
+                "equity": current_equity,
+                "buying_power": float(account.buying_power) if hasattr(account, 'buying_power') else 0.0,
+                "daily_returns": daily_returns
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting performance metrics: {e}")
+            return {"error": str(e)}
+    
     def run(self):
         """
         Run the strategy once
@@ -683,75 +778,6 @@ class AdvancedAIStrategy:
             
         except Exception as e:
             logger.error(f"Error running strategy: {e}")
-            return {"error": str(e)}
-    
-    def get_performance_metrics(self):
-        """
-        Get performance metrics for the strategy
-        
-        Returns:
-            Dictionary with performance metrics
-        """
-        try:
-            # Get account information
-            account = self.api.get_account()
-            
-            # Get portfolio history
-            portfolio_hist = self.api.get_portfolio_history(period="1M", timeframe="1D")
-            
-            # Calculate daily returns
-            equity = portfolio_hist.equity
-            daily_returns = [0]
-            
-            for i in range(1, len(equity)):
-                if equity[i-1] > 0:
-                    daily_return = (equity[i] - equity[i-1]) / equity[i-1]
-                    daily_returns.append(daily_return)
-                else:
-                    daily_returns.append(0)
-            
-            # Calculate metrics
-            total_return = (float(account.equity) - float(account.last_equity)) / float(account.last_equity) * 100
-            
-            # Annualized return
-            trading_days = len(equity)
-            if trading_days > 1:
-                annualized_return = ((1 + total_return/100) ** (252/trading_days) - 1) * 100
-            else:
-                annualized_return = 0
-            
-            # Sharpe ratio
-            risk_free_rate = self.config.get("risk_free_rate", 0.02) / 252  # Daily risk-free rate
-            excess_returns = [r - risk_free_rate for r in daily_returns]
-            sharpe_ratio = 0
-            
-            if len(excess_returns) > 1 and np.std(excess_returns) > 0:
-                sharpe_ratio = np.mean(excess_returns) / np.std(excess_returns) * np.sqrt(252)
-            
-            # Maximum drawdown
-            max_drawdown = 0
-            peak = equity[0]
-            
-            for value in equity:
-                if value > peak:
-                    peak = value
-                drawdown = (peak - value) / peak
-                max_drawdown = max(max_drawdown, drawdown)
-            
-            max_drawdown *= 100  # Convert to percentage
-            
-            return {
-                "total_return": total_return,
-                "annualized_return": annualized_return,
-                "sharpe_ratio": sharpe_ratio,
-                "max_drawdown": max_drawdown,
-                "equity": float(account.equity),
-                "buying_power": float(account.buying_power),
-                "daily_returns": daily_returns
-            }
-            
-        except Exception as e:
-            logger.error(f"Error getting performance metrics: {e}")
             return {"error": str(e)}
 
 

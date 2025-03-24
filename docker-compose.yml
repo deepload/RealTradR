@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  realtradR:
+    build: .
+    container_name: realtradR
+    volumes:
+      - ./:/app
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./data:/app/data
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"  # For FastAPI
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=realtradR
+    depends_on:
+      - db
+    command: python run_advanced_strategy.py --use-mock-data
+    networks:
+      - realtradR-network
+
+  db:
+    image: postgres:14
+    container_name: realtradR-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=realtradR
+    ports:
+      - "5432:5432"
+    networks:
+      - realtradR-network
+
+  # Uncomment to add a web UI for monitoring
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: realtradR-grafana
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #   networks:
+  #     - realtradR-network
+  #   depends_on:
+  #     - db
+
+networks:
+  realtradR-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  # grafana_data:

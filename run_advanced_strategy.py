@@ -92,12 +92,13 @@ def load_config(config_path):
         }
 
 def generate_mock_data(symbols, days=60):
-    """Generate mock price data for testing when API calls fail"""
+    """Generate mock price data for testing"""
     logger.info(f"Generating mock data for {len(symbols)} symbols")
-    
     mock_data = {}
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
+    
+    # Generate 90 days of data to ensure enough history for ML models (which need 30 days)
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=days + 30)  # Add 30 extra days for ML model history
     date_range = pd.date_range(start=start_date, end=end_date, freq='D')
     
     for symbol in symbols:
@@ -106,14 +107,48 @@ def generate_mock_data(symbols, days=60):
         daily_returns = np.random.normal(0.0005, 0.015, size=len(date_range))  # Small positive drift
         prices = base_price * np.cumprod(1 + daily_returns)
         
-        # Create DataFrame with OHLCV data
+        # Create DataFrame with OHLCV data and timestamp column for ML models
+        open_prices = prices * (1 - np.random.rand(len(date_range)) * 0.01)
+        high_prices = prices * (1 + np.random.rand(len(date_range)) * 0.01)
+        low_prices = prices * (1 - np.random.rand(len(date_range)) * 0.02)
+        close_prices = prices
+        volumes = np.random.randint(100000, 10000000, size=len(date_range))
+        
         df = pd.DataFrame({
-            'open': prices * (1 - np.random.rand(len(date_range)) * 0.01),
-            'high': prices * (1 + np.random.rand(len(date_range)) * 0.01),
-            'low': prices * (1 - np.random.rand(len(date_range)) * 0.02),
-            'close': prices,
-            'volume': np.random.randint(100000, 10000000, size=len(date_range))
+            'open': open_prices,
+            'high': high_prices,
+            'low': low_prices,
+            'close': close_prices,
+            'volume': volumes,
+            'timestamp': [int(d.timestamp()) for d in date_range]  # Convert to integer Unix timestamp
         }, index=date_range)
+        
+        # Ensure the DataFrame has the format expected by the ML models
+        df['date'] = date_range.strftime('%Y-%m-%d')  # Convert to string format
+        df['symbol'] = symbol
+        
+        # Add technical indicators to the mock data
+        try:
+            from backend.app.ai.technical_indicators import TechnicalIndicators
+            ti = TechnicalIndicators()
+            
+            # Add common technical indicators manually
+            df['sma_20'] = ti.sma(df['close'], 20)
+            df['ema_20'] = ti.ema(df['close'], 20)
+            df['rsi_14'] = ti.rsi(df['close'], 14)
+            df['macd'], df['macd_signal'], df['macd_hist'] = ti.macd(df['close'])
+            df['bb_upper'], df['bb_middle'], df['bb_lower'] = ti.bollinger_bands(df['close'])
+            
+            # Add ATR and other indicators that need high/low prices
+            df['atr_14'] = ti.atr(df['high'], df['low'], df['close'], 14)
+            
+            # Skip market regime detection as it requires more parameters
+            # Just assign random regime values
+            df['market_regime'] = np.random.randint(1, 6, size=len(df))
+            
+            logger.debug(f"Added technical indicators to mock data for {symbol}")
+        except Exception as e:
+            logger.warning(f"Could not add technical indicators to mock data: {e}")
         
         mock_data[symbol] = df
     
