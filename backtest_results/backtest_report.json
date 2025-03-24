@@ -1,0 +1,68 @@
+{
+  "backtest_summary": {
+    "start_date": "2024-01-01",
+    "end_date": "2024-03-24",
+    "initial_capital": 100000.0,
+    "final_value": 99389.6421250829,
+    "total_return": -0.6103578749171001,
+    "annualized_return": -14.29692667140855,
+    "sharpe_ratio": -9.06652718184134,
+    "sortino_ratio": -14.031416224139878,
+    "max_drawdown": 0.6456976457957784,
+    "win_rate": 0,
+    "profit_factor": Infinity,
+    "total_trades": 0
+  },
+  "trades": [
+    {
+      "timestamp": "2024-03-11",
+      "symbol": "AAPL",
+      "side": "buy",
+      "shares": 33,
+      "price": 165.7995727141833,
+      "value": 5471.385899568049,
+      "commission": 5.471385899568049,
+      "total_cost": 5476.857285467618
+    },
+    {
+      "timestamp": "2024-03-11",
+      "symbol": "MSFT",
+      "side": "buy",
+      "shares": 17,
+      "price": 299.3147016439377,
+      "value": 5088.3499279469415,
+      "commission": 5.0883499279469415,
+      "total_cost": 5093.438277874889
+    },
+    {
+      "timestamp": "2024-03-11",
+      "symbol": "META",
+      "side": "buy",
+      "shares": 19,
+      "price": 277.3332371735272,
+      "value": 5269.331506297017,
+      "commission": 5.269331506297017,
+      "total_cost": 5274.600837803314
+    },
+    {
+      "timestamp": "2024-03-12",
+      "symbol": "AMZN",
+      "side": "buy",
+      "shares": 94,
+      "price": 103.2712383206315,
+      "value": 9707.49640213936,
+      "commission": 9.70749640213936,
+      "total_cost": 9717.2038985415
+    },
+    {
+      "timestamp": "2024-03-20",
+      "symbol": "AAPL",
+      "side": "buy",
+      "shares": 6,
+      "price": 167.49260039936016,
+      "value": 1004.9556023961609,
+      "commission": 1.004955602396161,
+      "total_cost": 1005.9605579985571
+    }
+  ]
+}

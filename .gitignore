@@ -61,3 +61,13 @@ Thumbs.db
 .qodo
 config.yaml
 .alpaca_creds
+
+# Model files
+*.pkl
+*.h5
+*.model
+*.joblib
+*.pt
+*.pth
+models/
+saved_models/

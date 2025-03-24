@@ -19,3 +19,10 @@ websockets<11.0.0,>=9.0.0
 aiohttp==3.8.1
 psycopg2-binary==2.9.6
 alembic==1.10.3
+textblob==0.17.1
+nltk==3.8.1
+tensorflow==2.12.0
+keras==2.12.0
+statsmodels==0.14.0
+yfinance==0.2.18
+ta==0.10.2

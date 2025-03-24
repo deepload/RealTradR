@@ -7,8 +7,93 @@
     "META"
   ],
   "cash_limit": 100000.0,
-  "short_window": 10,
-  "long_window": 30,
-  "stop_loss_pct": 2.0,
-  "take_profit_pct": 5.0
+  "signal_weights": {
+    "sentiment": 0.0,
+    "technical": 0.6,
+    "ml": 0.4
+  },
+  "position_sizing": {
+    "method": "kelly",
+    "max_position_pct": 0.2,
+    "base_position_pct": 0.05,
+    "min_position_dollars": 1000
+  },
+  "risk_management": {
+    "stop_loss": 2.0,
+    "take_profit": 5.0,
+    "max_drawdown": 25.0,
+    "correlation_threshold": 0.7
+  },
+  "ml_settings": {
+    "use_ml_models": true,
+    "model_dir": "./models",
+    "prediction_days": 5,
+    "training_interval_days": 30,
+    "min_training_data_days": 60
+  },
+  "market_data": {
+    "default_days": 60,
+    "timeframes": ["1D", "1H", "15Min"],
+    "use_mock_data_on_api_failure": true,
+    "mock_data_volatility": 0.015,
+    "use_mock_data": false
+  },
+  "api_credentials": {
+    "use_test_credentials": false,
+    "use_paper": true,
+    "api_key": "PKFK3EAPXA9D9CXZ33JD",
+    "api_secret": "hu9YIoZSqhLiOLLoTkHt5mh2NK4gTi7fXPQf6X1L"
+  },
+  "execution": {
+    "min_signal_threshold": 0.1,
+    "rebalance_threshold_pct": 5.0,
+    "max_trades_per_day": 10
+  },
+  "logging": {
+    "log_level": "INFO",
+    "log_trades": true,
+    "log_signals": true,
+    "log_performance": true
+  },
+  "reporting": {
+    "generate_report": true,
+    "report_file": "strategy_report.json",
+    "include_trade_history": true,
+    "include_performance_metrics": true
+  },
+  "backtest_settings": {
+    "start_date": "2023-01-01",
+    "end_date": "2023-12-31",
+    "initial_capital": 100000.0,
+    "commission": 0.001,
+    "slippage": 0.001
+  },
+  "ml_model_settings": {
+    "lstm_units": 50,
+    "dropout_rate": 0.2,
+    "epochs": 100,
+    "batch_size": 32,
+    "validation_split": 0.2,
+    "lookback_period": 30
+  },
+  "technical_indicator_settings": {
+    "sma_periods": [10, 20, 50, 200],
+    "ema_periods": [9, 21, 55],
+    "rsi_period": 14,
+    "macd_settings": {
+      "fast_period": 12,
+      "slow_period": 26,
+      "signal_period": 9
+    },
+    "bollinger_settings": {
+      "period": 20,
+      "std_dev": 2.0
+    }
+  },
+  "sentiment_settings": {
+    "twitter_weight": 0.4,
+    "reddit_weight": 0.3,
+    "news_weight": 0.3,
+    "lookback_days": 3
+  }
 }

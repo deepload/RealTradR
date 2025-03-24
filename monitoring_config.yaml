@@ -1,0 +1,124 @@
+# RealTradR Monitoring Configuration
+
+# Logging Configuration
+logging:
+  # Log directory (relative to application root)
+  log_dir: "logs"
+  
+  # Default log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  default_level: "INFO"
+  
+  # Log rotation
+  max_bytes: 10485760  # 10MB
+  backup_count: 10
+  
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+# Performance Monitoring
+performance:
+  # Enable performance monitoring
+  enabled: true
+  
+  # Monitoring interval in seconds
+  interval: 60
+  
+  # Prometheus metrics
+  prometheus:
+    enabled: true
+    port: 8000
+
+# Alerts Configuration
+alerts:
+  # Enable alerts
+  enabled: true
+  
+  # Log alerts to file
+  log_alerts: true
+  
+  # Email alerts
+  email_alerts:
+    enabled: false
+    smtp_server: "${SMTP_SERVER}"
+    smtp_port: 587
+    smtp_username: "${SMTP_USERNAME}"
+    smtp_password: "${SMTP_PASSWORD}"
+    from_email: "${ALERT_FROM_EMAIL}"
+    to_emails:
+      - "${ALERT_TO_EMAIL1}"
+      - "${ALERT_TO_EMAIL2}"
+  
+  # Slack alerts
+  slack_alerts:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#realtrad-alerts"
+  
+  # Alert thresholds
+  thresholds:
+    # Trading thresholds
+    drawdown_pct: 10.0        # Portfolio drawdown percentage
+    daily_loss_pct: 5.0       # Daily loss percentage
+    consecutive_losses: 5     # Number of consecutive losing trades
+    
+    # System thresholds
+    cpu_pct: 90.0             # CPU usage percentage
+    memory_pct: 90.0          # Memory usage percentage
+    disk_pct: 90.0            # Disk usage percentage
+    
+    # API thresholds
+    api_error_rate: 0.1       # API error rate (errors/total)
+    api_latency_ms: 2000      # API latency in milliseconds
+
+# Trade Logging
+trade_logging:
+  # Enable trade logging
+  enabled: true
+  
+  # Log directory (relative to application root)
+  log_dir: "logs/trades"
+  
+  # Log format (json, csv)
+  format: "json"
+  
+  # Fields to log
+  fields:
+    - timestamp
+    - strategy
+    - symbol
+    - side
+    - quantity
+    - price
+    - order_type
+    - time_in_force
+    - status
+    - profit_loss
+    - commission
+    - slippage
+    - execution_time
+
+# Dashboard Configuration
+dashboard:
+  # Enable dashboard
+  enabled: false
+  
+  # Dashboard port
+  port: 8050
+  
+  # Authentication
+  auth:
+    enabled: true
+    username: "${DASHBOARD_USERNAME}"
+    password: "${DASHBOARD_PASSWORD}"
+  
+  # Refresh interval in seconds
+  refresh_interval: 60
+  
+  # Panels to display
+  panels:
+    - portfolio
+    - trades
+    - performance
+    - signals
+    - system

@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-24T22:33:09.999268",
+  "account": {},
+  "positions": {},
+  "performance": {
+    "sharpe_ratio": 0.0,
+    "max_drawdown": 0.0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "total_trades": 0,
+    "winning_trades": 0,
+    "losing_trades": 0
+  },
+  "trades": []
+}
