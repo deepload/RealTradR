@@ -9,27 +9,44 @@ This module implements an advanced trading strategy that combines:
 """
 
 import os
+import sys
 import json
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 import alpaca_trade_api as tradeapi
 from alpaca_trade_api.rest import TimeFrame
 
-# Import our custom modules
-from .technical_indicators import TechnicalIndicators, MarketRegime
-from .sentiment_analyzer import get_symbol_sentiment
-from .ml_models import LSTMModel, EnsembleModel, SentimentAwareModel
-from .risk_management import RiskManager
+# Try to import TensorFlow, but use fallback if not available
+try:
+    import tensorflow as tf
+    TENSORFLOW_AVAILABLE = True
+    logger = logging.getLogger(__name__)
+    logger.info("TensorFlow successfully imported")
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.warning(f"TensorFlow import failed: {e}. Will use fallback ML models.")
+    TENSORFLOW_AVAILABLE = False
 
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
-logger = logging.getLogger(__name__)
+
+# Import our custom modules
+from .technical_indicators import TechnicalIndicators, MarketRegime
+from .sentiment_analyzer import get_symbol_sentiment
+from .risk_management import RiskManager
+
+# Import ML models based on availability
+if TENSORFLOW_AVAILABLE:
+    from .ml_models import LSTMModel, EnsembleModel, SentimentAwareModel, ModelManager
+else:
+    from .ml_models_fallback import ModelManager
 
 # Load environment variables
 load_dotenv()
@@ -123,7 +140,9 @@ class AdvancedAIStrategy:
         )
         
         # Initialize ML models dictionary
-        self.ml_models = {}
+        self.model_manager = ModelManager(
+            model_dir=self.config.get("model_dir", "./models")
+        )
         
         # Track signals and positions
         self.signals = {}
@@ -371,49 +390,13 @@ class AdvancedAIStrategy:
             return {'predicted_price': None, 'predicted_change': 0, 'ml_signal': 0}
         
         try:
-            # Check if we have a model for this symbol
-            if symbol not in self.ml_models:
-                # Load model if it exists
-                model_dir = os.path.join('models', symbol)
-                if os.path.exists(model_dir):
-                    try:
-                        self.ml_models[symbol] = SentimentAwareModel.load(model_dir)
-                        logger.info(f"Loaded ML model for {symbol}")
-                    except Exception as e:
-                        logger.error(f"Error loading ML model for {symbol}: {e}")
-                        return {'predicted_price': None, 'predicted_change': 0, 'ml_signal': 0}
-                else:
-                    logger.warning(f"No ML model found for {symbol}")
-                    return {'predicted_price': None, 'predicted_change': 0, 'ml_signal': 0}
+            # Make prediction using the model manager
+            prediction = self.model_manager.predict(df, symbol)
             
-            # Get sentiment for prediction
-            sentiment_data = self.get_sentiment_signal(symbol)
-            sentiment_score = sentiment_data.get('sentiment_score', 0)
-            
-            # Make prediction
-            model = self.ml_models[symbol]
-            predicted_price = model.predict(df, sentiment_score)
-            
-            # Calculate predicted change
-            current_price = df['close'].iloc[-1]
-            predicted_change = (predicted_price - current_price) / current_price
-            
-            # Convert to signal
-            if predicted_change > 0.01:
-                ml_signal = 1  # Bullish
-            elif predicted_change < -0.01:
-                ml_signal = -1  # Bearish
-            else:
-                ml_signal = 0  # Neutral
-            
-            return {
-                'predicted_price': predicted_price,
-                'predicted_change': predicted_change,
-                'ml_signal': ml_signal
-            }
-            
+            logger.info(f"ML prediction for {symbol}: {prediction}")
+            return prediction
         except Exception as e:
-            logger.error(f"Error getting ML prediction for {symbol}: {e}")
+            logger.error(f"Error getting ML prediction: {e}")
             return {'predicted_price': None, 'predicted_change': 0, 'ml_signal': 0}
     
     def combine_signals(self, technical_signal, sentiment_signal, ml_signal):

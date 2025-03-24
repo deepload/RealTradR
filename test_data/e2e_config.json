@@ -1,0 +1,21 @@
+{
+  "symbols": [
+    "AAPL",
+    "MSFT"
+  ],
+  "cash_limit": 100000.0,
+  "sentiment_weight": 0.3,
+  "technical_weight": 0.4,
+  "ml_weight": 0.3,
+  "position_sizing": "kelly",
+  "max_position_pct": 20.0,
+  "use_market_regime": true,
+  "use_sentiment": false,
+  "use_ml_models": true,
+  "model_dir": "test_data\\models",
+  "stop_loss_pct": 2.0,
+  "take_profit_pct": 5.0,
+  "max_drawdown_pct": 25.0,
+  "risk_free_rate": 0.02,
+  "max_correlation": 0.7
+}
