@@ -19,10 +19,10 @@ import alpaca_trade_api as tradeapi
 from alpaca_trade_api.rest import TimeFrame
 
 # Import our custom modules
-from app.ai.technical_indicators import TechnicalIndicators, MarketRegime
-from app.ai.sentiment_analyzer import get_symbol_sentiment
-from app.ai.ml_models import LSTMModel, EnsembleModel, SentimentAwareModel
-from app.ai.risk_management import RiskManager
+from .technical_indicators import TechnicalIndicators, MarketRegime
+from .sentiment_analyzer import get_symbol_sentiment
+from .ml_models import LSTMModel, EnsembleModel, SentimentAwareModel
+from .risk_management import RiskManager
 
 # Set up logging
 logging.basicConfig(

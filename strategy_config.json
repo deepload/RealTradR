@@ -10,5 +10,51 @@
   "short_window": 10,
   "long_window": 30,
   "stop_loss_pct": 2.0,
-  "take_profit_pct": 5.0
+  "take_profit_pct": 5.0,
+  "sentiment_weight": 0.3,
+  "technical_weight": 0.4,
+  "ml_weight": 0.3,
+  "position_sizing": "kelly",
+  "max_position_pct": 20.0,
+  "use_market_regime": true,
+  "use_sentiment": true,
+  "use_ml_models": true,
+  "risk_free_rate": 0.02,
+  "max_drawdown_pct": 25.0,
+  "max_correlation": 0.7,
+  "backtest_settings": {
+    "start_date": "2023-01-01",
+    "end_date": "2023-12-31",
+    "initial_capital": 100000.0,
+    "commission": 0.001,
+    "slippage": 0.001
+  },
+  "ml_model_settings": {
+    "lstm_units": 50,
+    "dropout_rate": 0.2,
+    "epochs": 100,
+    "batch_size": 32,
+    "validation_split": 0.2,
+    "lookback_period": 30
+  },
+  "technical_indicator_settings": {
+    "sma_periods": [10, 20, 50, 200],
+    "ema_periods": [9, 21, 55],
+    "rsi_period": 14,
+    "macd_settings": {
+      "fast_period": 12,
+      "slow_period": 26,
+      "signal_period": 9
+    },
+    "bollinger_settings": {
+      "period": 20,
+      "std_dev": 2.0
+    }
+  },
+  "sentiment_settings": {
+    "twitter_weight": 0.4,
+    "reddit_weight": 0.3,
+    "news_weight": 0.3,
+    "lookback_days": 3
+  }
 }
