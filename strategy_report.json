@@ -1,0 +1,56 @@
+{
+  "timestamp": "2025-03-24T21:55:37.649345",
+  "portfolio": {
+    "value": 100000.0,
+    "cash": 100000.0
+  },
+  "metrics": {
+    "total_return": 0,
+    "annualized_return": 0,
+    "sharpe_ratio": 0,
+    "max_drawdown": 0,
+    "win_rate": 0,
+    "profit_factor": 0
+  },
+  "trades": [],
+  "positions": [],
+  "signals": {
+    "AAPL": {
+      "technical": 0,
+      "ml": 0,
+      "sentiment": 0,
+      "combined": 0
+    },
+    "MSFT": {
+      "technical": 0,
+      "ml": 0,
+      "sentiment": 0,
+      "combined": 0
+    },
+    "GOOGL": {
+      "technical": 0,
+      "ml": 0,
+      "sentiment": 0,
+      "combined": 0
+    },
+    "AMZN": {
+      "technical": 0,
+      "ml": 0,
+      "sentiment": 0,
+      "combined": 0
+    },
+    "META": {
+      "technical": 0,
+      "ml": 0,
+      "sentiment": 0,
+      "combined": 0
+    }
+  },
+  "market_regimes": {
+    "AAPL": "unknown",
+    "MSFT": "unknown",
+    "GOOGL": "unknown",
+    "AMZN": "unknown",
+    "META": "unknown"
+  }
+}

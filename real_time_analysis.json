@@ -1,0 +1,112 @@
+{
+  "AAPL": {
+    "symbol": "AAPL",
+    "current_price": 220.34,
+    "prev_close": 218.22,
+    "volume": 1325290,
+    "technical_indicators": {
+      "sma_20": 222.5913107939527,
+      "sma_50": 222.17319011485102,
+      "rsi": 45.68376726801209,
+      "macd": -1.166403679424377,
+      "macd_signal": -0.44095745083448334,
+      "bb_lower": 213.80823286972387,
+      "bb_upper": 231.3743887181815
+    },
+    "signals": {
+      "trend": "BULLISH",
+      "rsi": "NEUTRAL",
+      "macd": "BEARISH",
+      "bollinger_bands": "NEUTRAL"
+    },
+    "overall_signal": "HOLD"
+  },
+  "MSFT": {
+    "symbol": "MSFT",
+    "current_price": 392.6,
+    "prev_close": 391.19,
+    "volume": 535214,
+    "technical_indicators": {
+      "sma_20": 394.70412066213464,
+      "sma_50": 388.0969031497201,
+      "rsi": 47.78018556233203,
+      "macd": 4.147185156203022,
+      "macd_signal": 3.5888756887766116,
+      "bb_lower": 377.55230750767237,
+      "bb_upper": 411.8559338165969
+    },
+    "signals": {
+      "trend": "BULLISH",
+      "rsi": "NEUTRAL",
+      "macd": "BULLISH",
+      "bollinger_bands": "NEUTRAL"
+    },
+    "overall_signal": "BUY"
+  },
+  "GOOGL": {
+    "symbol": "GOOGL",
+    "current_price": 167.6,
+    "prev_close": 164.07,
+    "volume": 911872,
+    "technical_indicators": {
+      "sma_20": 197.33852270201422,
+      "sma_50": 194.6310241927653,
+      "rsi": 13.807348121087813,
+      "macd": -2.500901301763605,
+      "macd_signal": 0.679912279159981,
+      "bb_lower": 181.06584196266016,
+      "bb_upper": 213.61120344136827
+    },
+    "signals": {
+      "trend": "BULLISH",
+      "rsi": "OVERSOLD",
+      "macd": "BEARISH",
+      "bollinger_bands": "OVERSOLD"
+    },
+    "overall_signal": "BUY"
+  },
+  "AMZN": {
+    "symbol": "AMZN",
+    "current_price": 203.04,
+    "prev_close": 196.16,
+    "volume": 1286092,
+    "technical_indicators": {
+      "sma_20": 194.77492932079593,
+      "sma_50": 196.26105963775024,
+      "rsi": 52.968214378604344,
+      "macd": -2.1047486154015758,
+      "macd_signal": -1.9946028561741473,
+      "bb_lower": 183.83087326468535,
+      "bb_upper": 205.71898537690652
+    },
+    "signals": {
+      "trend": "BEARISH",
+      "rsi": "NEUTRAL",
+      "macd": "BEARISH",
+      "bollinger_bands": "NEUTRAL"
+    },
+    "overall_signal": "SELL"
+  },
+  "META": {
+    "symbol": "META",
+    "current_price": 618.46,
+    "prev_close": 596.275,
+    "volume": 399246,
+    "technical_indicators": {
+      "sma_20": 680.7929095659218,
+      "sma_50": 658.0794111672194,
+      "rsi": 28.25726056766065,
+      "macd": 3.479704517798268,
+      "macd_signal": 9.740454632759379,
+      "bb_lower": 638.1521018872346,
+      "bb_upper": 723.433717244609
+    },
+    "signals": {
+      "trend": "BULLISH",
+      "rsi": "OVERSOLD",
+      "macd": "BEARISH",
+      "bollinger_bands": "OVERSOLD"
+    },
+    "overall_signal": "BUY"
+  }
+}

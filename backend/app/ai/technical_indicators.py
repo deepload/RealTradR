@@ -70,7 +70,7 @@ class TechnicalIndicators:
             signal: Signal line window
             
         Returns:
-            DataFrame with MACD line, signal line, and histogram
+            Dictionary with MACD line, signal line, and histogram
         """
         fast_ema = TechnicalIndicators.ema(data, fast)
         slow_ema = TechnicalIndicators.ema(data, slow)
@@ -78,11 +78,11 @@ class TechnicalIndicators:
         signal_line = TechnicalIndicators.ema(macd_line, signal)
         histogram = macd_line - signal_line
         
-        return pd.DataFrame({
-            'macd_line': macd_line,
-            'signal_line': signal_line,
-            'histogram': histogram
-        })
+        return {
+            'macd': macd_line,
+            'signal': signal_line,
+            'hist': histogram
+        }
     
     @staticmethod
     def rsi(data, window=14):
@@ -123,7 +123,7 @@ class TechnicalIndicators:
             num_std: Number of standard deviations
             
         Returns:
-            DataFrame with upper band, middle band, and lower band
+            Dictionary with upper band, middle band, and lower band
         """
         middle_band = TechnicalIndicators.sma(data, window)
         std_dev = data.rolling(window=window).std()
@@ -131,11 +131,11 @@ class TechnicalIndicators:
         upper_band = middle_band + (std_dev * num_std)
         lower_band = middle_band - (std_dev * num_std)
         
-        return pd.DataFrame({
-            'upper_band': upper_band,
-            'middle_band': middle_band,
-            'lower_band': lower_band
-        })
+        return {
+            'bb_upper': upper_band,
+            'bb_middle': middle_band,
+            'bb_lower': lower_band
+        }
     
     @staticmethod
     def atr(high, low, close, window=14):
@@ -176,21 +176,20 @@ class TechnicalIndicators:
             d_window: %D window
             
         Returns:
-            DataFrame with %K and %D values
+            Dictionary with %K and %D values
         """
         # Calculate %K
         lowest_low = low.rolling(window=k_window).min()
         highest_high = high.rolling(window=k_window).max()
-        
         k = 100 * ((close - lowest_low) / (highest_high - lowest_low))
         
-        # Calculate %D
+        # Calculate %D (SMA of %K)
         d = k.rolling(window=d_window).mean()
         
-        return pd.DataFrame({
-            'k': k,
-            'd': d
-        })
+        return {
+            'stoch_k': k,
+            'stoch_d': d
+        }
     
     @staticmethod
     def obv(close, volume):
@@ -565,26 +564,26 @@ class TechnicalIndicators:
         
         # MACD
         macd_data = TechnicalIndicators.macd(result['close'])
-        result['macd_line'] = macd_data['macd_line']
-        result['macd_signal'] = macd_data['signal_line']
-        result['macd_histogram'] = macd_data['histogram']
+        result['macd_line'] = macd_data['macd']
+        result['macd_signal'] = macd_data['signal']
+        result['macd_histogram'] = macd_data['hist']
         
         # RSI
         result['rsi_14'] = TechnicalIndicators.rsi(result['close'])
         
         # Bollinger Bands
         bb_data = TechnicalIndicators.bollinger_bands(result['close'])
-        result['bb_upper'] = bb_data['upper_band']
-        result['bb_middle'] = bb_data['middle_band']
-        result['bb_lower'] = bb_data['lower_band']
+        result['bb_upper'] = bb_data['bb_upper']
+        result['bb_middle'] = bb_data['bb_middle']
+        result['bb_lower'] = bb_data['bb_lower']
         
         # ATR
         result['atr_14'] = TechnicalIndicators.atr(result['high'], result['low'], result['close'])
         
         # Stochastic Oscillator
         stoch_data = TechnicalIndicators.stochastic_oscillator(result['high'], result['low'], result['close'])
-        result['stoch_k'] = stoch_data['k']
-        result['stoch_d'] = stoch_data['d']
+        result['stoch_k'] = stoch_data['stoch_k']
+        result['stoch_d'] = stoch_data['stoch_d']
         
         # ADX
         adx_data = TechnicalIndicators.adx(result['high'], result['low'], result['close'])
@@ -617,3 +616,247 @@ class TechnicalIndicators:
                 ).value
         
         return result
+
+    @staticmethod
+    def calculate_technical_signal(df, market_regime):
+        """
+        Calculate technical signal based on indicators and market regime
+        
+        Args:
+            df: DataFrame with technical indicators
+            market_regime: Current market regime
+            
+        Returns:
+            Signal between -1 and 1
+        """
+        try:
+            # Get latest values
+            latest = df.iloc[-1]
+            
+            # Initialize signals
+            trend_signals = []
+            momentum_signals = []
+            volatility_signals = []
+            volume_signals = []
+            
+            # Trend signals
+            if 'sma_20' in df.columns and 'sma_50' in df.columns:
+                # SMA crossover
+                if df['sma_20'].iloc[-1] > df['sma_50'].iloc[-1] and df['sma_20'].iloc[-2] <= df['sma_50'].iloc[-2]:
+                    trend_signals.append(1.0)  # Bullish crossover
+                elif df['sma_20'].iloc[-1] < df['sma_50'].iloc[-1] and df['sma_20'].iloc[-2] >= df['sma_50'].iloc[-2]:
+                    trend_signals.append(-1.0)  # Bearish crossover
+                # SMA position
+                if df['close'].iloc[-1] > df['sma_50'].iloc[-1]:
+                    trend_signals.append(0.5)  # Price above SMA50
+                elif df['close'].iloc[-1] < df['sma_50'].iloc[-1]:
+                    trend_signals.append(-0.5)  # Price below SMA50
+            
+            if 'ema_12' in df.columns and 'ema_26' in df.columns:
+                # EMA crossover
+                if df['ema_12'].iloc[-1] > df['ema_26'].iloc[-1] and df['ema_12'].iloc[-2] <= df['ema_26'].iloc[-2]:
+                    trend_signals.append(1.0)  # Bullish crossover
+                elif df['ema_12'].iloc[-1] < df['ema_26'].iloc[-1] and df['ema_12'].iloc[-2] >= df['ema_26'].iloc[-2]:
+                    trend_signals.append(-1.0)  # Bearish crossover
+            
+            # MACD signals
+            if 'macd' in df.columns and 'macd_signal' in df.columns:
+                if df['macd'].iloc[-1] > df['macd_signal'].iloc[-1] and df['macd'].iloc[-2] <= df['macd_signal'].iloc[-2]:
+                    momentum_signals.append(1.0)  # Bullish crossover
+                elif df['macd'].iloc[-1] < df['macd_signal'].iloc[-1] and df['macd'].iloc[-2] >= df['macd_signal'].iloc[-2]:
+                    momentum_signals.append(-1.0)  # Bearish crossover
+                
+                # MACD histogram
+                if 'macd_histogram' in df.columns:
+                    if df['macd_histogram'].iloc[-1] > 0:
+                        momentum_signals.append(0.5)  # Positive histogram
+                    elif df['macd_histogram'].iloc[-1] < 0:
+                        momentum_signals.append(-0.5)  # Negative histogram
+            
+            # RSI signals
+            if 'rsi' in df.columns:
+                rsi = df['rsi'].iloc[-1]
+                if rsi < 30:
+                    momentum_signals.append(0.8)  # Oversold
+                elif rsi > 70:
+                    momentum_signals.append(-0.8)  # Overbought
+                elif 30 <= rsi < 45:
+                    momentum_signals.append(0.4)  # Rising from oversold
+                elif 55 < rsi <= 70:
+                    momentum_signals.append(-0.4)  # Falling from overbought
+            
+            # Bollinger Bands signals
+            if 'bb_upper' in df.columns and 'bb_lower' in df.columns:
+                if df['close'].iloc[-1] > df['bb_upper'].iloc[-1]:
+                    volatility_signals.append(-0.7)  # Price above upper band (overbought)
+                elif df['close'].iloc[-1] < df['bb_lower'].iloc[-1]:
+                    volatility_signals.append(0.7)  # Price below lower band (oversold)
+                
+                # Bollinger Band squeeze
+                bb_width = (df['bb_upper'].iloc[-1] - df['bb_lower'].iloc[-1]) / df['bb_middle'].iloc[-1]
+                bb_width_prev = (df['bb_upper'].iloc[-10] - df['bb_lower'].iloc[-10]) / df['bb_middle'].iloc[-10]
+                
+                if bb_width < 0.1:
+                    volatility_signals.append(0.3)  # Low volatility, potential breakout
+                elif bb_width > bb_width_prev * 1.5:
+                    volatility_signals.append(0.2)  # Expanding volatility
+            
+            # Volume signals
+            if 'volume' in df.columns and 'obv' in df.columns:
+                # Volume trend
+                vol_sma = df['volume'].rolling(window=20).mean()
+                if df['volume'].iloc[-1] > vol_sma.iloc[-1] * 1.5:
+                    volume_signals.append(0.5)  # High volume
+                
+                # OBV trend
+                obv_sma = df['obv'].rolling(window=20).mean()
+                if df['obv'].iloc[-1] > obv_sma.iloc[-1] and df['close'].iloc[-1] > df['close'].iloc[-5]:
+                    volume_signals.append(0.5)  # Rising OBV with rising price
+                elif df['obv'].iloc[-1] < obv_sma.iloc[-1] and df['close'].iloc[-1] < df['close'].iloc[-5]:
+                    volume_signals.append(-0.5)  # Falling OBV with falling price
+            
+            # Combine signals with weights based on market regime
+            if market_regime in [MarketRegime.BULL_STRONG, MarketRegime.BULL_NORMAL]:
+                # In bull market, emphasize trend and momentum
+                weights = {
+                    'trend': 0.4,
+                    'momentum': 0.3,
+                    'volatility': 0.2,
+                    'volume': 0.1
+                }
+            elif market_regime in [MarketRegime.BEAR_STRONG, MarketRegime.BEAR_NORMAL]:
+                # In bear market, emphasize volatility and volume
+                weights = {
+                    'trend': 0.3,
+                    'momentum': 0.2,
+                    'volatility': 0.3,
+                    'volume': 0.2
+                }
+            else:
+                # In neutral market, balanced weights
+                weights = {
+                    'trend': 0.25,
+                    'momentum': 0.25,
+                    'volatility': 0.25,
+                    'volume': 0.25
+                }
+            
+            # Calculate weighted average of signals
+            signal = 0.0
+            signal_count = 0
+            
+            if trend_signals:
+                signal += weights['trend'] * sum(trend_signals) / len(trend_signals)
+                signal_count += 1
+            
+            if momentum_signals:
+                signal += weights['momentum'] * sum(momentum_signals) / len(momentum_signals)
+                signal_count += 1
+            
+            if volatility_signals:
+                signal += weights['volatility'] * sum(volatility_signals) / len(volatility_signals)
+                signal_count += 1
+            
+            if volume_signals:
+                signal += weights['volume'] * sum(volume_signals) / len(volume_signals)
+                signal_count += 1
+            
+            # Normalize signal to [-1, 1]
+            if signal_count > 0:
+                signal = max(min(signal, 1.0), -1.0)
+            else:
+                signal = 0.0
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"Error calculating technical signal: {e}")
+            return 0.0
+    
+    @staticmethod
+    def add_all_indicators(df, sma_periods=None, ema_periods=None, macd_params=None, rsi_period=14, bb_params=None):
+        """
+        Add all technical indicators to a DataFrame
+        
+        Args:
+            df: DataFrame with OHLCV data
+            sma_periods: List of periods for SMA calculation, defaults to [20, 50, 200]
+            ema_periods: List of periods for EMA calculation, defaults to [12, 26]
+            macd_params: Dictionary with MACD parameters, defaults to {'fast': 12, 'slow': 26, 'signal': 9}
+            rsi_period: Period for RSI calculation, defaults to 14
+            bb_params: Dictionary with Bollinger Bands parameters, defaults to {'window': 20, 'num_std': 2}
+            
+        Returns:
+            DataFrame with added technical indicators
+        """
+        try:
+            # Make a copy of the DataFrame to avoid modifying the original
+            result = df.copy()
+            
+            # Ensure we have the required columns
+            required_columns = ['open', 'high', 'low', 'close']
+            for col in required_columns:
+                if col not in result.columns:
+                    raise ValueError(f"Required column '{col}' not found in DataFrame")
+            
+            # Set default parameters if not provided
+            if sma_periods is None:
+                sma_periods = [20, 50, 200]
+            if ema_periods is None:
+                ema_periods = [12, 26]
+            if macd_params is None:
+                macd_params = {'fast': 12, 'slow': 26, 'signal': 9}
+            if bb_params is None:
+                bb_params = {'window': 20, 'num_std': 2}
+            
+            # Add SMA indicators
+            for period in sma_periods:
+                result[f'sma_{period}'] = TechnicalIndicators.sma(result['close'], period)
+            
+            # Add EMA indicators
+            for period in ema_periods:
+                result[f'ema_{period}'] = TechnicalIndicators.ema(result['close'], period)
+            
+            # Add MACD
+            macd_data = TechnicalIndicators.macd(
+                result['close'],
+                fast=macd_params.get('fast', 12),
+                slow=macd_params.get('slow', 26),
+                signal=macd_params.get('signal', 9)
+            )
+            result['macd'] = macd_data['macd']
+            result['macd_signal'] = macd_data['signal']
+            result['macd_hist'] = macd_data['hist']
+            
+            # Add RSI
+            result[f'rsi_{rsi_period}'] = TechnicalIndicators.rsi(result['close'], rsi_period)
+            
+            # Add Bollinger Bands
+            bb_data = TechnicalIndicators.bollinger_bands(
+                result['close'],
+                window=bb_params.get('window', 20),
+                num_std=bb_params.get('num_std', 2)
+            )
+            result['bb_upper'] = bb_data['bb_upper']
+            result['bb_middle'] = bb_data['bb_middle']
+            result['bb_lower'] = bb_data['bb_lower']
+            
+            # Add ATR if high and low are available
+            if 'high' in result.columns and 'low' in result.columns:
+                result['atr_14'] = TechnicalIndicators.atr(result['high'], result['low'], result['close'], 14)
+            
+            # Add Stochastic Oscillator if high and low are available
+            if 'high' in result.columns and 'low' in result.columns:
+                stoch_data = TechnicalIndicators.stochastic_oscillator(result['high'], result['low'], result['close'])
+                result['stoch_k'] = stoch_data['stoch_k']
+                result['stoch_d'] = stoch_data['stoch_d']
+            
+            # Add OBV if volume is available
+            if 'volume' in result.columns:
+                result['obv'] = TechnicalIndicators.obv(result['close'], result['volume'])
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error adding technical indicators: {e}")
+            raise

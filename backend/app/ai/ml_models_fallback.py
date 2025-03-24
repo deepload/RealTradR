@@ -296,7 +296,18 @@ class FallbackPricePredictor:
         
         # Prepare data
         df = price_data.copy()
-        df = df.set_index('timestamp')
+        
+        # Check if timestamp is already the index
+        if df.index.name == 'timestamp':
+            # Already indexed by timestamp
+            pass
+        elif 'timestamp' in df.columns:
+            # Set timestamp as index if it's a column
+            df = df.set_index('timestamp')
+        else:
+            # If no timestamp column, use the existing index
+            logger.warning(f"No timestamp column found for {symbol}, using existing index")
+            df.index.name = 'timestamp'  # Rename the index for consistency
         
         # Create features
         data = self._create_features(df)
@@ -370,6 +381,19 @@ class ModelManager:
         self.price_predictor = FallbackPricePredictor(model_dir=model_dir)
         
         logger.info(f"Initialized ModelManager with model_dir: {model_dir}")
+    
+    def has_model(self, symbol):
+        """
+        Check if a model exists for a specific symbol.
+        
+        Args:
+            symbol: Symbol to check
+            
+        Returns:
+            Boolean indicating if model exists
+        """
+        model_path = os.path.join(self.model_dir, f"{symbol}_ensemble.pkl")
+        return os.path.exists(model_path)
     
     def train_models(self, price_data, symbols, force_retrain=False):
         """
